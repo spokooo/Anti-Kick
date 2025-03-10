@@ -59,7 +59,7 @@ local OldNamecall; OldNamecall = hookmetamethod(game, "__namecall", newcclosure(
         if CanCastToSTDString(message) then
             if ED_AntiKick.SendNotifications then
                 SetCore(StarterGui, "SendNotification", {
-                    Title = "Exunys Developer - Anti-Kick",
+                    Title = "Spoko Developer - Anti-Kick",
                     Text = "Successfully intercepted an attempted kick.",
                     Icon = "rbxassetid://6238540373",
                     Duration = 2
@@ -86,7 +86,7 @@ local OldFunction; OldFunction = hookfunction(LocalPlayer.Kick, function(...)
         if CanCastToSTDString(Message) then
             if ED_AntiKick.SendNotifications then
                 SetCore(StarterGui, "SendNotification", {
-                    Title = "Exunys Developer - Anti-Kick",
+                    Title = "Spoko Developer - Anti-Kick",
                     Text = "Successfully intercepted an attempted kick.",
                     Icon = "rbxassetid://6238540373",
                     Duration = 2
@@ -100,7 +100,7 @@ end)
 
 if getgenv().ED_AntiKick.SendNotifications then
     StarterGui:SetCore("SendNotification", {
-        Title = "Exunys Developer - Anti-Kick",
+        Title = "Spoko Developer - Anti-Kick",
         Text = "Anti-Kick script loaded!",
         Icon = "rbxassetid://6238537240",
         Duration = 3
