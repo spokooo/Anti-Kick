@@ -187,13 +187,22 @@ function api:Upgrade(tower: number, time: number, wave: number)
 	end
 end
 
--- FIXED: changed .send to .invoke + added taskwait after for reliability
+-- TEST: printing UID and server response to debug target issue
 function api:SetTarget(tower: number, target: string, time: number, wave: number)
 	if waitTime(time, wave) then
 		updatelog(`Changed Tower {tower} Target to {target}`)
 	
 		local realindex = env.firsttower + (tower - 1)
-		towers.SetTargetMode.invoke({["UID"] = realindex, ["TargetMode"] = target})
+		print(`[SetTarget] Tower slot: {tower} | Calculated UID: {realindex} | Target: {target}`)
+		
+		local result = towers.SetTargetMode.invoke({["UID"] = realindex, ["TargetMode"] = target})
+		print(`[SetTarget Result] Type: {type(result)} | Value:`, result)
+		if type(result) == "table" then
+			for k, v in pairs(result) do
+				print(`  [{k}] = {v}`)
+			end
+		end
+		
 		taskwait(0.1)
 	end
 end
