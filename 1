@@ -187,22 +187,27 @@ function api:Upgrade(tower: number, time: number, wave: number)
 	end
 end
 
--- TEST: printing UID and server response to debug target issue
+-- TEST: printing tower folder contents to find correct UID
 function api:SetTarget(tower: number, target: string, time: number, wave: number)
 	if waitTime(time, wave) then
 		updatelog(`Changed Tower {tower} Target to {target}`)
-	
-		local realindex = env.firsttower + (tower - 1)
-		print(`[SetTarget] Tower slot: {tower} | Calculated UID: {realindex} | Target: {target}`)
 		
-		local result = towers.SetTargetMode.invoke({["UID"] = realindex, ["TargetMode"] = target})
-		print(`[SetTarget Result] Type: {type(result)} | Value:`, result)
-		if type(result) == "table" then
-			for k, v in pairs(result) do
-				print(`  [{k}] = {v}`)
+		local towerFolder = replicatedstorage:FindFirstChild("Towers") or replicatedstorage:FindFirstChild("TowerData")
+		if towerFolder then
+			print("[Tower Folder Found]:", towerFolder.Name)
+			for i, v in pairs(towerFolder:GetChildren()) do
+				print(`  [{i}] Name: {v.Name} | UID attr: {v:GetAttribute("UID")} | Index: {v:GetAttribute("Index")}`)
+			end
+		else
+			print("[Tower Folder NOT found] - checking RoundInfo attributes:")
+			for _, attr in pairs({"Towers", "TowerList", "ActiveTowers"}) do
+				print(`  {attr}:`, mapinfo:GetAttribute(attr))
 			end
 		end
-		
+
+		local realindex = env.firsttower + (tower - 1)
+		print(`[SetTarget] Sending UID: {realindex} | Target: {target}`)
+		towers.SetTargetMode.send({["UID"] = realindex, ["TargetMode"] = target})
 		taskwait(0.1)
 	end
 end
