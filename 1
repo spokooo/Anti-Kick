@@ -98,7 +98,6 @@ end
 window:ShowTab(logtab)
 updatelog("Voting")
 
--- FIXED: now reads from env instead of bare globals
 function waitTime(time, wave)
 	while env.waveinfo < wave and not env.isroundover do
 		taskwait(0.05)
@@ -169,18 +168,25 @@ function api:AutoSkip(enable: number, time: number, wave: number)
 	if waitTime(time, wave) then updatelog(`AutoSkip set to {tostring(enable)}`) bytenet.SkipWave.ToggleAutoSkip.send(enable) end
 end
 
--- FIXED: added taskwait(0.1) after invoke so server has time to register placement
 function api:Place(tower: string, position: Vector3, time: number, wave: number)
 	if waitTime(time, wave) then	
 		env.totalplacedtowers = env.totalplacedtowers + 1
 		
 		updatelog(`Placed Tower {tower}`)
-		towers.PlaceTower.invoke({["Position"] = position, ["Rotation"] = 0, ["TowerID"] = tower})
+		local result = towers.PlaceTower.invoke({["Position"] = position, ["Rotation"] = 0, ["TowerID"] = tower})
+		
+		-- TEST: print what the server returns so we can use it for SetTarget
+		print(`[PlaceTower Result] Tower: {tower} | Type: {type(result)} | Value:`, result)
+		if type(result) == "table" then
+			for k, v in pairs(result) do
+				print(`  [{k}] = {v}`)
+			end
+		end
+		
 		taskwait(0.1)
 	end
 end
 
--- FIXED: env.firsttower instead of bare firsttower
 function api:Upgrade(tower: number, time: number, wave: number)
 	if waitTime(time, wave) then
 		updatelog(`Upgraded Tower {tower}`)
@@ -190,7 +196,6 @@ function api:Upgrade(tower: number, time: number, wave: number)
 	end
 end
 
--- FIXED: env.firsttower instead of bare firsttower
 function api:SetTarget(tower: number, target: string, time: number, wave: number)
 	if waitTime(time, wave) then
 		updatelog(`Changed Tower {tower} Target to {target}`)
@@ -200,7 +205,6 @@ function api:SetTarget(tower: number, target: string, time: number, wave: number
 	end
 end
 
--- FIXED: env.firsttower instead of bare firsttower
 function api:Sell(tower: number, time: number, wave: number)
 	if waitTime(time, wave) then
 		updatelog(`Sold Tower {tower}`) 
