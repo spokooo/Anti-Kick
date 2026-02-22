@@ -173,16 +173,7 @@ function api:Place(tower: string, position: Vector3, time: number, wave: number)
 		env.totalplacedtowers = env.totalplacedtowers + 1
 		
 		updatelog(`Placed Tower {tower}`)
-		local result = towers.PlaceTower.invoke({["Position"] = position, ["Rotation"] = 0, ["TowerID"] = tower})
-		
-		-- TEST: print what the server returns so we can use it for SetTarget
-		print(`[PlaceTower Result] Tower: {tower} | Type: {type(result)} | Value:`, result)
-		if type(result) == "table" then
-			for k, v in pairs(result) do
-				print(`  [{k}] = {v}`)
-			end
-		end
-		
+		towers.PlaceTower.invoke({["Position"] = position, ["Rotation"] = 0, ["TowerID"] = tower})
 		taskwait(0.1)
 	end
 end
@@ -196,12 +187,14 @@ function api:Upgrade(tower: number, time: number, wave: number)
 	end
 end
 
+-- FIXED: changed .send to .invoke + added taskwait after for reliability
 function api:SetTarget(tower: number, target: string, time: number, wave: number)
 	if waitTime(time, wave) then
 		updatelog(`Changed Tower {tower} Target to {target}`)
 	
 		local realindex = env.firsttower + (tower - 1)
-		towers.SetTargetMode.send({["UID"] = realindex, ["TargetMode"] = target})
+		towers.SetTargetMode.invoke({["UID"] = realindex, ["TargetMode"] = target})
+		taskwait(0.1)
 	end
 end
 
