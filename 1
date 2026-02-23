@@ -21,6 +21,12 @@ function api:Map(map: string, modifiers: table)
 	bytenet.MatchmakingNew.CreateSingleplayer.invoke({["Gamemode"] = "Standard", ["MapID"] = map, ["Modifiers"] = modifiers})
 end
 
+function api:SetTimescale(value: number)
+	local replicatedstorage = game:GetService("ReplicatedStorage")
+	local bytenet = require(replicatedstorage:WaitForChild("Teawork"):WaitForChild("Shared"):WaitForChild("Services"):WaitForChild("ByteNetworking"))
+	bytenet.Timescale.SetTimescale.send(value)
+end
+
 if game.PlaceId ~= 124069847780670 then return api end
 
 local towers = bytenet.Towers
@@ -38,11 +44,21 @@ env.timer = 0
 env.lasttime = ostime()
 env.waveinfo = 1
 env.isroundover = false
+env.iswin = false
+env.isloss = false
 
 env.totalplacedtowers = 0
 env.firsttower = 1
 
 env.destroyui = false
+
+-- Anti-AFK
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+	VirtualUser:Button2Down(Vector2.new(0, 0), CFrame.new())
+	task.wait(1)
+	VirtualUser:Button2Up(Vector2.new(0, 0), CFrame.new())
+end)
 
 local window = library:CreateWindow({
     Title = "Shitty X",
@@ -123,13 +139,49 @@ function api:Start()
 
 	env.waveinfo = mapinfo:GetAttribute("Wave") or 1
 	env.timer = 0
-	
+	env.iswin = false
+	env.isloss = false
+	env.isroundover = false
+
 	mapinfo:GetAttributeChangedSignal("Wave"):Connect(function()
 		env.waveinfo = mapinfo:GetAttribute("Wave")
 	end)
 
+	-- improved win/loss detection
 	roundresultui:GetPropertyChangedSignal("Visible"):Connect(function()
-		env.isroundover = roundresultui.Visible
+		if roundresultui.Visible then
+			env.isroundover = true
+
+			-- try to detect win or loss from the UI
+			local resultlabel = roundresultui:FindFirstChildWhichIsA("TextLabel", true)
+			if resultlabel then
+				local text = resultlabel.Text:lower()
+				if text:find("win") or text:find("victory") or text:find("success") then
+					env.iswin = true
+					env.isloss = false
+					updatelog("Round Over - WIN")
+				elseif text:find("lose") or text:find("loss") or text:find("defeat") or text:find("fail") then
+					env.isloss = true
+					env.iswin = false
+					updatelog("Round Over - LOSS")
+				else
+					-- fallback: check if a win/loss frame exists by name
+					local winframe = roundresultui:FindFirstChild("Win") or roundresultui:FindFirstChild("Victory")
+					local lossframe = roundresultui:FindFirstChild("Lose") or roundresultui:FindFirstChild("Defeat") or roundresultui:FindFirstChild("Loss")
+					if winframe and winframe.Visible then
+						env.iswin = true
+						env.isloss = false
+						updatelog("Round Over - WIN")
+					elseif lossframe and lossframe.Visible then
+						env.isloss = true
+						env.iswin = false
+						updatelog("Round Over - LOSS")
+					else
+						updatelog("Round Over - Unknown result")
+					end
+				end
+			end
+		end
 	end)
 	
 	updatelog("Game Started")
@@ -207,13 +259,22 @@ function api:Sell(tower: number, time: number, wave: number)
 end
 
 function api:PlayAgain()
+	-- wait for round to end
 	while not env.isroundover do taskwait(0.1) end
-	
+
+	if env.isloss then
+		updatelog("Lost the game - not restarting")
+		return
+	end
+
 	env.firsttower = env.totalplacedtowers + 1
 	
 	env.lasttime = ostime()
 	env.timer = 0
 	env.waveinfo = 1
+	env.isroundover = false
+	env.iswin = false
+	env.isloss = false
 	
 	taskwait(1)
 	
